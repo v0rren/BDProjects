@@ -27,16 +27,21 @@ for line in sys.stdin:
     if current_user in userID_2_products:
         userID_2_products[current_user].add(current_product)
 
-# Create a list of tuples
-# list_of_tuples = set(itertools.product(userID_2_products.keys(), userID_2_products.keys()))
-
+# filter my dictionary with users that have reviewed at least 3 products
 for u in userID_2_products:
-    if len(userID_2_products[u]) == 3:
+    if len(userID_2_products[u]) >= 3:
         filtered_userID_2_products[u] = userID_2_products[u]
 listUsers = filtered_userID_2_products.keys()
-list_of_tuples = (tuple(i) for i in itertools.product(tuple(listUsers), repeat=2) if tuple(reversed(i)) >= tuple(i) and i[0] != i[1] )
 
-for tuples in list(list_of_tuples):
+# create a generator of tuple removing the reversed tuple ( if I have (1,2) i don't want (2,1) and same value (1,1)
+# also removing the tuples that have less than 3 products after intersecting their product list
+list_of_tuples = (tuple(i) for i in itertools.product(tuple(listUsers), repeat=2) if tuple(reversed(i)) >= tuple(i) and i[0] != i[1] and len(filtered_userID_2_products[i[0]].intersection(filtered_userID_2_products[i[1]])) >= 3)
+
+# somma = sum( 1 for tuples in list_of_tuples)
+# print("%s\t%d" % ("somma filatrata", somma))
+
+
+for tuples in list_of_tuples:
 
     if tuples[0] == tuples[1]:
         continue
@@ -52,9 +57,5 @@ for tuples in list(list_of_tuples):
     set2 = filtered_userID_2_products[cur_bigram[1]]
     set3 = set1.intersection(set2)
     if len(set3) >= 3:
-        users_2_shared_products[cur_bigram].update(set1.intersection(set2))
+        print("%s\t%s" % (cur_bigram, set3))
 
-for users in users_2_shared_products:
-    shared_prod = list(users_2_shared_products[users])
-    if len(shared_prod) != 0:
-        print("%s\t%s" % (users, shared_prod[:3]))

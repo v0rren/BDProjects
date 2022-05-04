@@ -37,10 +37,6 @@ listUsers = filtered_userID_2_products.keys()
 # also removing the tuples that have less than 3 products after intersecting their product list
 list_of_tuples = (tuple(i) for i in itertools.product(tuple(listUsers), repeat=2) if tuple(reversed(i)) >= tuple(i) and i[0] != i[1] and len(filtered_userID_2_products[i[0]].intersection(filtered_userID_2_products[i[1]])) >= 3)
 
-# somma = sum( 1 for tuples in list_of_tuples)
-# print("%s\t%d" % ("somma filatrata", somma))
-
-
 for tuples in list_of_tuples:
 
     if tuples[0] == tuples[1]:

@@ -2,9 +2,18 @@
 import argparse
 from pyspark.sql import SparkSession
 import re
-from operator import add
+import itertools
 
 regex = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"
+
+
+def filter_unique_reverse(x):
+    if x[0][0] != x[1][0]:
+        return True
+    if "\n" not in x[1][0]:
+        return True
+    return False
+
 
 # create parser and set its arguments
 parser = argparse.ArgumentParser()
@@ -14,7 +23,6 @@ parser.add_argument("--output_path", type=str, help="Output folder path")
 # parse arguments
 args = parser.parse_args()
 input_filepath, output_filepath = args.input_path, args.output_path
-
 
 # initialize SparkSession with the proper configuration
 spark = SparkSession \
@@ -34,25 +42,41 @@ more_than_4_product_score_RDD = filtered_lines_RDD.filter(f=lambda line: int(re.
 user_2_products_RDD = more_than_4_product_score_RDD. \
     map(f=lambda line: (re.split(regex, line)[2], re.split(regex, line)[1]))
 
-# at_least_3_products_RDD = user_2_products_RDD.filter(f=lambda x: len(x[1]) >= 3)
-
 user_2_products_reduced_RDD = user_2_products_RDD.reduceByKey(func=lambda a, b: a + " " + b)
 
-# users_2_product_list_RDD = user_2_products_reduced_RDD.map(f=lambda x: (x[0], x[1].split(" ")))
+at_least_3_products_RDD = user_2_products_reduced_RDD.filter(f=lambda line: len(line[1].split(" ")) >= 3).\
+    map(f=lambda x: (x[0], set(x[1].split(" "))))
 
-at_least_3_products_RDD = user_2_products_reduced_RDD.filter(f=lambda line: len(line[1].split(" ")) >= 3)
+user_2_product_dictionary = at_least_3_products_RDD.collectAsMap()
 
-simplified_RDD = at_least_3_products_RDD.map(f=lambda x: x[0] + "\t" + x[1])
-cartesian_RDD = simplified_RDD.cartesian(simplified_RDD)
 
-simplified_cartesian_2_pairs_RDD = cartesian_RDD.map(f=lambda x: (x[0].split("\t"), x[1].split("\t")))
-filtered_cartesian_2_pairs_RDD = simplified_cartesian_2_pairs_RDD.filter(f=lambda x: x[0][0] != x[1][0])
+# create a generator of tuple removing the reversed tuple ( if I have (1,2) i don't want (2,1) and same value (1,1)
+# also removing the tuples that have less than 3 products after intersecting their product list
+list_of_tuples = (tuple(i) for i in itertools.product(tuple(user_2_product_dictionary.keys()), repeat=2)
+                  if tuple(reversed(i)) >= tuple(i) and i[0] != i[1]
+                  and len(user_2_product_dictionary[i[0]].intersection(user_2_product_dictionary[i[1]])) >= 3)
 
-product_intersect_RDD = filtered_cartesian_2_pairs_RDD.\
-    map(f=lambda x: ((x[0][0], x[1][0]), set(x[0][1].split(" ")).intersection(set(x[1][1].split(" ")))))
 
-filtered_product_intersect_RDD = product_intersect_RDD.\
+#simplified_RDD = at_least_3_products_RDD.map(f=lambda x: x[0] + "\t" + x[1])
+# cartesian_RDD = simplified_RDD.cartesian(tagged_simplified_RDD)
+
+#cartesian_RDD = spark.sparkContext.parallelize(combinations(simplified_RDD.collect(), 1))
+#simplified_cartesian_2_pairs_RDD = cartesian_RDD.map(f=lambda x: (x[0].split("\t"), x[1].split("\t")))
+
+# filtered_cartesian_2_pairs_RDD = simplified_cartesian_2_pairs_RDD.filter(f=lambda x:  x[0][0] != x[1][0])
+
+#product_intersect_RDD = cartesian_RDD. \
+#    map(f=lambda x: ((x[0][0], x[1][0]), set(x[0][1].split(" ")).intersection(set(x[1][1].split(" ")))))
+
+#filtered_product_intersect_RDD = product_intersect_RDD. \
+#    filter(f=lambda x: len(x[1]) >= 3)
+
+sorted_final_RDD = spark.sparkContext.parallelize(sorted(list_of_tuples, key=lambda x: x)).\
+    map(f=lambda x: (x, user_2_product_dictionary[x[0]].intersection(user_2_product_dictionary[x[1]]))).\
     filter(f=lambda x: len(x[1]) >= 3)
 
-collapsed_RDD = filtered_product_intersect_RDD.coalesce(1)
+
+# without_reverse_ordered_RDD = spark.sparkContext. \
+#    parallelize(sorted(filtered_product_intersect_RDD.collect(), key=lambda x: x[0]))
+collapsed_RDD = sorted_final_RDD.coalesce(1)
 collapsed_RDD.saveAsTextFile(output_filepath)

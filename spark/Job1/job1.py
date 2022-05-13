@@ -32,8 +32,7 @@ spark = SparkSession \
 lines_RDD = spark.sparkContext.textFile(input_filepath).cache()
 
 # remove csv header
-filtered_lines_RDD = lines_RDD.filter(f=lambda word: not word.startswith("Id")
-                                                     and not word.endswith("Text"))
+filtered_lines_RDD = lines_RDD.filter(f=lambda word: not word.startswith("Id") and not word.endswith("Text"))
 
 stripped_lines_RDD = filtered_lines_RDD.map(f=lambda line: line.strip())
 
@@ -49,4 +48,5 @@ years_2_most_used_words_RDD = years_2_word_RDD.map(f=lambda item: (item[0], Coun
 years_2_top_10_most_used_words_RDD = years_2_most_used_words_RDD.map(f=lambda item: (item[0], item[1][:10]))
 
 # write all <year, list of (word, occurrence)> pairs in file
+years_2_top_10_most_used_words_RDD.coalesce(1)
 years_2_top_10_most_used_words_RDD.saveAsTextFile(output_filepath)

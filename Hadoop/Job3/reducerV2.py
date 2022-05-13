@@ -22,23 +22,17 @@ for line in sys.stdin:
     # parse the input elements
     current_user, current_product = line.split("\t\t")
 
-    # initialize user2product dict and set if current user was not in there
+    # initialize userID_2_products dict and set if current user was not in there
     if current_user not in userID_2_products:
         userID_2_products[current_user] = set()
     if current_user in userID_2_products:
         userID_2_products[current_user].add(current_product)
 
-    # initialize user2product dict and set if current user was not in there
+    # initialize products_2_userID dict and set if current product was not in there
     if current_product not in products_2_userID:
         products_2_userID[current_product] = set()
     if current_product in products_2_userID:
         products_2_userID[current_product].add(current_user)
-
-# filter my dictionary with users that have reviewed at least 3 products
-for u in userID_2_products:
-    if len(userID_2_products[u]) >= 3:
-        filtered_userID_2_products[u] = userID_2_products[u]
-listUsers = filtered_userID_2_products.keys()
 
 for product in products_2_userID.keys():
     pairs = list(itertools.combinations(products_2_userID[product], 2))

@@ -4,16 +4,6 @@ from pyspark.sql import SparkSession
 import re
 import itertools
 
-regex = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"
-
-
-def filter_unique_reverse(x):
-    if x[0][0] != x[1][0]:
-        return True
-    if "\n" not in x[1][0]:
-        return True
-    return False
-
 
 # create parser and set its arguments
 parser = argparse.ArgumentParser()
@@ -30,6 +20,8 @@ spark = SparkSession \
     .appName("Job1 Spark") \
     .config("spark.executor.instances", 15) \
     .getOrCreate()
+
+regex = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"
 
 # read the input file and obtain an RDD with a record for each line
 lines_RDD = spark.sparkContext.textFile(input_filepath).cache()
@@ -50,7 +42,7 @@ product_2_userID_reduced_RDD = product_2_userID_RDD.reduceByKey(func=lambda a, b
 userID_2_product_reduced_RDD = userID_2_product_RDD.reduceByKey(func=lambda a, b: a + " " + b)
 
 filtered_product_2_userID_reduced_RDD = product_2_userID_reduced_RDD.filter(f=lambda x: len(x[1].split(" ")) > 1). \
-    map(f=lambda x: (x[0], x[1].split(" ")))
+    map(f=lambda x: (x[0], set(x[1].split(" "))))
 
 filtered_userID_2_product_reduced_RDD = userID_2_product_reduced_RDD.map(f=lambda x: (x[0], set(x[1].split(" "))))
 
@@ -64,16 +56,12 @@ for product in product_2_userID_dictionary.keys():
 
     for pair in pairs:
         if pair and tuple(reversed(pair)) not in final_dict:
-            products_intersection = userID_2_product_dictionary[pair[0]].\
+            products_intersection = userID_2_product_dictionary[pair[0]]. \
                 intersection(userID_2_product_dictionary[pair[1]])
             if len(products_intersection) >= 3:
                 final_dict[pair] = products_intersection
 
+final_RDD = spark.sparkContext.parallelize(sorted(final_dict.items(), key=lambda x: (x[0], x[1])))
 
-
-final_RDD= spark.sparkContext.parallelize(sorted(final_dict.items() , key= lambda x: (x[0],x[1])))
-
-# without_reverse_ordered_RDD = spark.sparkContext. \
-#    parallelize(sorted(filtered_product_intersect_RDD.collect(), key=lambda x: x[0]))
 collapsed_RDD = final_RDD.coalesce(1)
 collapsed_RDD.saveAsTextFile(output_filepath)

@@ -56,27 +56,9 @@ list_of_tuples = (tuple(i) for i in itertools.product(tuple(user_2_product_dicti
                   if tuple(reversed(i)) >= tuple(i) and i[0] != i[1]
                   and len(user_2_product_dictionary[i[0]].intersection(user_2_product_dictionary[i[1]])) >= 3)
 
-
-#simplified_RDD = at_least_3_products_RDD.map(f=lambda x: x[0] + "\t" + x[1])
-# cartesian_RDD = simplified_RDD.cartesian(tagged_simplified_RDD)
-
-#cartesian_RDD = spark.sparkContext.parallelize(combinations(simplified_RDD.collect(), 1))
-#simplified_cartesian_2_pairs_RDD = cartesian_RDD.map(f=lambda x: (x[0].split("\t"), x[1].split("\t")))
-
-# filtered_cartesian_2_pairs_RDD = simplified_cartesian_2_pairs_RDD.filter(f=lambda x:  x[0][0] != x[1][0])
-
-#product_intersect_RDD = cartesian_RDD. \
-#    map(f=lambda x: ((x[0][0], x[1][0]), set(x[0][1].split(" ")).intersection(set(x[1][1].split(" ")))))
-
-#filtered_product_intersect_RDD = product_intersect_RDD. \
-#    filter(f=lambda x: len(x[1]) >= 3)
-
 sorted_final_RDD = spark.sparkContext.parallelize(sorted(list_of_tuples, key=lambda x: x)).\
     map(f=lambda x: (x, user_2_product_dictionary[x[0]].intersection(user_2_product_dictionary[x[1]]))).\
     filter(f=lambda x: len(x[1]) >= 3)
 
-
-# without_reverse_ordered_RDD = spark.sparkContext. \
-#    parallelize(sorted(filtered_product_intersect_RDD.collect(), key=lambda x: x[0]))
 collapsed_RDD = sorted_final_RDD.coalesce(1)
 collapsed_RDD.saveAsTextFile(output_filepath)

@@ -1,0 +1,120 @@
+DROP TABLE IF EXISTS review
+OK
+Time taken: 2.465 seconds
+
+CREATE TABLE review (id int, productid string, userid string, profilename string, hnum int, hden int, score int, zaman bigint, summ string, metin string) row format delimited fields terminated by ','
+OK
+Time taken: 0.753 seconds
+
+
+LOAD DATA LOCAL INPATH '/home/beyza/Downloads/Reviews.csv' OVERWRITE INTO TABLE review
+Loading data to table default.review
+OK
+Time taken: 2.345 seconds
+
+
+DROP TABLE IF EXISTS product_user_1
+OK
+Time taken: 0.563 seconds
+
+CREATE TABLE product_user_1 (productid string, userid string) row format delimited fields terminated by ',' COLLECTION ITEMS TERMINATED BY ' '
+OK
+Time taken: 0.097 seconds
+ 
+INSERT INTO product_user_1 
+SELECT DISTINCT productid, userid
+FROM review
+WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+Query ID = beyza_20220513070347_dk549gj2-32sd-83hf-83bn-lds793jf723o3
+Total jobs = 1
+Launching Job 1 out of 1
+Number of reduce tasks not specified. Estimated from input data size: 2
+In order to change the average load for a reducer (in bytes):
+  set hive.exec.reducers.bytes.per.reducer=<number>
+In order to limit the maximum number of reducers:
+  set hive.exec.reducers.max=<number>
+In order to set a constant number of reducers:
+  set mapreduce.job.reduces=<number>
+Job running in-process (local Hadoop)
+2022-05-13 07:03:53,436 Stage-1 map = 0%,  reduce = 0%
+2022-05-13 07:03:58,474 Stage-1 map = 100%,  reduce = 0%
+2022-05-13 07:03:59,532 Stage-1 map = 50%,  reduce = 0%
+2022-05-13 07:04:01,436 Stage-1 map = 100%,  reduce = 0%
+2022-05-13 07:04:04,325 Stage-1 map = 100%,  reduce = 50%
+2022-05-13 07:04:05,563 Stage-1 map = 100%,  reduce = 100%
+Ended Job = job_local332191446_0001
+Loading data to table default.product_user_1
+MapReduce Jobs Launched: 
+Stage-Stage-1:  HDFS Read: 4385698003 HDFS Write: 4536872892 SUCCESS
+Total MapReduce CPU Time Spent: 0 msec
+OK
+Time taken: 13.837 seconds
+
+
+DROP TABLE IF EXISTS product_user_2
+OK
+Time taken: 0.868 seconds
+
+CREATE TABLE product_user_2 (productid1 string, productid2 string, userid string) row format delimited fields terminated by ',' COLLECTION ITEMS TERMINATED BY ' '
+OK
+Time taken: 0.535 seconds
+ 
+INSERT INTO product_user_2 
+SELECT p1.productid, p2.productid, p1.userid
+FROM product_user_1 p1 inner join product_user_1 p2 on p1.userid=p2.userid and p1.productid<>p2.productid and p1.productid<p2.productid
+WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+Query ID = beyza_20220513070406_9435hfw8-32rf-3rf3-4tw4-fgj9300ng353
+Total jobs = 3
+Stage-7 is selected by condition resolver.
+Stage-8 is filtered out by condition resolver.
+Stage-1 is filtered out by condition resolver.
+2022-05-13 07:04:16	Starting to launch local task to process map join;	maximum memory = 458734985
+2022-05-13 07:04:21	Processing rows:	200000	Hashtable size:	199999	Memory usage:	4835784760	percentage:	0,541
+2022-05-13 07:04:21	Dump the side-table for tag: 1 with group count: 256060 into file: file:/tmp/beyza/4ksj9485-f785-4t5g-4t6h-f438758475b/hive_2022-05-13_07-04-05_356_3924837593845395680-1/-local-10002/HashTable-Stage-4/MapJoin-mapfile01--.hashtable
+2022-05-13 07:04:23	Uploaded 1 File to: file:/tmp/beyza/4ksj9485-f785-4t5g-4t6h-f438758475b/hive_2022-05-13_07-04-05_546_3924837593845395680-1/-local-10002/HashTable-Stage-4/MapJoin-mapfile01--.hashtable (16155517 bytes)
+2022-05-13 07:04:23	End of local task; Time Taken: 7.324 sec.
+Execution completed successfully
+MapredLocal task succeeded
+Launching Job 2 out of 3
+Number of reduce tasks is set to 0 since there's no reduce operator
+Job running in-process (local Hadoop)
+2022-05-13 07:04:27,111 Stage-4 map = 0%,  reduce = 0%
+2022-05-13 07:04:37,615 Stage-4 map = 50%,  reduce = 0%
+2022-05-13 07:04:40,625 Stage-4 map = 100%,  reduce = 0%
+Ended Job = job_local1315325613_0002
+Loading data to table default.product_user_2
+MapReduce Jobs Launched: 
+Stage-Stage-4:  HDFS Read: 315348555 HDFS Write: 408815759 SUCCESS
+Total MapReduce CPU Time Spent: 0 msec
+OK
+Time taken: 31.456 seconds
+
+
+INSERT OVERWRITE LOCAL DIRECTORY '/home/beyza/Downloads/bigdata/hive/hive_logs'
+SELECT productid1, productid2, COUNT(*) 
+FROM product_user_2
+GROUP BY productid1, productid2
+WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+Query ID = beyza_20220513070442_23924572-4y53-3487-kd02-cte56ud2be67
+Total jobs = 1
+Launching Job 1 out of 1
+Number of reduce tasks not specified. Estimated from input data size: 1
+In order to change the average load for a reducer (in bytes):
+  set hive.exec.reducers.bytes.per.reducer=<number>
+In order to limit the maximum number of reducers:
+  set hive.exec.reducers.max=<number>
+In order to set a constant number of reducers:
+  set mapreduce.job.reduces=<number>
+Job running in-process (local Hadoop)
+2022-05-13 07:04:43,456 Stage-1 map = 0%,  reduce = 0%
+2022-05-13 07:05:01,743 Stage-1 map = 67%,  reduce = 0%
+2022-05-13 07:05:07,853 Stage-1 map = 93%,  reduce = 0%
+2022-05-13 07:05:08,942 Stage-1 map = 100%,  reduce = 0%
+2022-05-13 07:05:16,459 Stage-1 map = 100%,  reduce = 100%
+Ended Job = job_local273089452_0003
+Moving data to local directory /home/beyza/Downloads/bigdata/hive/hive_logs
+MapReduce Jobs Launched: 
+Stage-Stage-1:  HDFS Read: 329759438 HDFS Write: 543987530 SUCCESS
+Total MapReduce CPU Time Spent: 0 msec
+OK
+Time taken: 24.467 seconds

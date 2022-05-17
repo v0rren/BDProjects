@@ -1,0 +1,65 @@
+DROP TABLE reviews;
+DROP TABLE year2text;
+DROP TABLE exploded_text;
+
+DROP TABLE groupedbyyear;
+DROP TABLE  year_word_sum;
+DROP TABLE  ten_most_used_word_per_year;
+
+
+CREATE TABLE IF NOT EXISTS reviews (
+id int,
+productid string,
+userId string,
+nick string,
+hn int,
+hd int,
+score int,
+time int,
+summary string,
+text string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ',';
+
+LOAD DATA LOCAL INPATH '/home/cvona/Documents/Reviews.csv' overwrite INTO TABLE reviews;
+
+
+SELECT * from reviews LIMIT 10;
+
+ADD FILE /home/cvona/Documents/date_convert.py;
+
+CREATE TABLE year2text AS
+    SELECT TRANSFORM(reviews.text, reviews.time)
+        USING 'python3 /home/cvona/Documents/date_convert.py' AS text, year
+    FROM reviews;
+
+
+
+CREATE TABLE exploded_text AS
+    SELECT year, exp.word
+    FROM  year2text LATERAL VIEW explode(split(regexp_replace(text,'[.!?\\-]',''),'\\s'))  exp AS word;
+SELECT * FROM exploded_text LIMIT 10;
+
+
+CREATE TABLE groupedbyyear AS
+    SELECT year, word, count(word) AS occurence
+    FROM exploded_text
+    GROUP BY year, word;
+ 
+
+CREATE TABLE year_word_sum AS
+
+    SELECT year,  word, sum(occurence) AS somma
+    FROM groupedbyyear 
+    GROUP BY year, word;
+
+
+CREATE TABLE ten_most_used_word_per_year AS
+    SELECT year, word, somma
+    FROM (
+        select *, ROW_NUMBER() OVER (PARTITION BY year ORDER BY year, somma DESC) AS rank
+        from year_word_sum
+    ) AS exp
+    WHERE rank<=10;
+
+    SELECT * from ten_most_used_word_per_year;

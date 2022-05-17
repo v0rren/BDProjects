@@ -1,0 +1,30 @@
+DROP TABLE reviews;
+DROP TABLE most_scored_product_for_user;
+
+
+CREATE TABLE IF NOT EXISTS reviews (
+id int,
+productid string,
+userid string,
+nick string,
+hn int,
+hd int,
+score int,
+time int,
+summary string,
+text string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ',';
+
+LOAD DATA LOCAL INPATH '/home/cvona/Documents/Reviews.csv' overwrite INTO TABLE reviews;
+
+
+SELECT * from reviews LIMIT 10;
+
+CREATE TABLE most_scored_product_for_user as
+    SELECT userid, productid, score
+    FROM (
+     SELECT *, ROW_NUMBER() OVER (PARTITION BY userid ORDER BY userid, score DESC) AS rank
+     FROM reviews
+    ) AS exp
+    WHERE rank <= 5;

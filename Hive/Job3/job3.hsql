@@ -1,0 +1,74 @@
+DROP TABLE reviews;
+DROP TABLE score_greater_than_3;
+drop table couples_greater;
+drop table similar_couples;
+drop table similar_couples_greater;
+drop table result;
+
+
+CREATE TABLE IF NOT EXISTS reviews (
+id int,
+productid string,
+userId string,
+nick string,
+hn int,
+hd int,
+score int,
+time int,
+summary string,
+text string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ',';
+
+LOAD DATA LOCAL INPATH '/home/cvona/Documents/Reviews.csv' overwrite INTO TABLE reviews;
+
+
+CREATE TABLE score_greater_than_3 AS
+    SELECT userid, productid, score
+    FROM reviews
+    WHERE score >= 4;
+
+
+
+CREATE TABLE result AS
+    select s1.userid as userid1, s2.userid as userid2, s1.productid, s2.productid as productid2
+    from score_greater_than_3 s1 inner join score_greater_than_3 s2 on s1.productid=s2.productid and s1.userid<s2.userid
+    group by s1.userid, s2.userid,s1.productid, s2.productid
+    having count(*)>=3;
+
+SELECT * FROM result LIMIT 100;
+
+SELECT
+CREATE TABLE couples AS
+SELECT l.UserId as LeftUser, l.ProductId, r.UserId as RightUser, l.Score as LeftScore, r.Score as RightScore
+FROM reviews l JOIN reviews r
+ON l.ProductId = r.ProductId WHERE l.UserId < r.UserId;
+
+CREATE TABLE couples_greater AS
+SELECT *
+FROM couples WHERE LeftScore >= 4 AND RightScore >= 4;
+
+CREATE TABLE similar_couples AS
+SELECT LeftUser, RightUser, COUNT(*) as repetitions
+FROM couples_greater
+GROUP BY LeftUser, RightUser;
+
+CREATE TABLE similar_couples_greater AS
+SELECT LeftUser,RightUser
+FROM similar_couples
+WHERE repetitions >= 3;
+
+CREATE TABLE result as
+SELECT c.LeftUser, ProductId, c.RightUser, LeftScore, RightScore
+FROM couples_greater c
+where exists (select s.LeftUser, s.RightUser 
+              from similar_couples_greater s
+              where s.LeftUser = c.LeftUser and s.RightUser = c.RightUser);
+
+select * from result;
+
+DROP TABLE reviews;
+DROP TABLE couples;
+drop table couples_greater;
+drop table similar_couples;
+drop table similar_couples_greater;

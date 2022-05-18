@@ -48,5 +48,4 @@ years_2_most_used_words_RDD = years_2_word_RDD.map(f=lambda item: (item[0], Coun
 years_2_top_10_most_used_words_RDD = years_2_most_used_words_RDD.map(f=lambda item: (item[0], item[1][:10]))
 
 # write all <year, list of (word, occurrence)> pairs in file
-years_2_top_10_most_used_words_RDD.coalesce(1)
-years_2_top_10_most_used_words_RDD.saveAsTextFile(output_filepath)
+years_2_top_10_most_used_words_RDD.coalesce(1).saveAsTextFile(output_filepath)

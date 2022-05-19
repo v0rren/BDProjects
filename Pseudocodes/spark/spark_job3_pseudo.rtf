@@ -1,5 +1,5 @@
 lines = spark.sparkContext.textFile(input_filepath).cache()
-filtered_lines = lines.filter(word: ! word.startswith("Id") & ! word.endswith("Text")) \cf3 //remove header\cf2 \
+filtered_lines = lines.filter(word: ! word.startswith("Id") & ! word.endswith("Text")) 
 more_than_4_product_score = filtered_lines.filter(line: re.split(regex, line)[6] >= 4)
 product_userID = more_than_4_product_score. \map(line: (re.split(regex, line)[1], re.split(regex, line)[2]))
 userID_product = more_than_4_product_score. \map(line: (re.split(regex, line)[2], re.split(regex, line)[1]))

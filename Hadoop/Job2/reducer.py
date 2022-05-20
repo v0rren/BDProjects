@@ -10,9 +10,9 @@ for line in sys.stdin:
 
     # initialize userID_2_products dict and set if current user was not in there
     if current_user not in userID_2_products:
-        userID_2_products[current_user] = []
+        userID_2_products[current_user] = set()
     if current_user in userID_2_products:
-        userID_2_products[current_user].append((current_product, score))
+        userID_2_products[current_user].add((current_product, score))
 
 for user in userID_2_products:
     product_2_score_list = userID_2_products[user]

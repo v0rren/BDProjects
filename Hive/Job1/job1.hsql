@@ -41,7 +41,7 @@ CREATE TABLE exploded_text AS
 SELECT * FROM exploded_text LIMIT 10;
 
 
-CREATE TABLE groupedbyyear AS
+CREATE TABLE grouped_by_year AS
     SELECT year, word, count(word) AS occurence
     FROM exploded_text
     GROUP BY year, word;
@@ -50,7 +50,7 @@ CREATE TABLE groupedbyyear AS
 CREATE TABLE year_word_sum AS
 
     SELECT year,  word, sum(occurence) AS somma
-    FROM groupedbyyear 
+    FROM grouped_by_year 
     GROUP BY year, word;
 
 

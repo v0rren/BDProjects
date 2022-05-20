@@ -16,7 +16,6 @@ for line in sys.stdin:
     productid = rows[1]
     userid = rows[2]
     score = rows[6]
-    print('%s\t%s\t%s' % (userid, productid, score))
     # we skip the first line
     if score != "Score":
         print('%s\t%s\t%s' % (userid, productid, score))
